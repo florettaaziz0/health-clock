@@ -207,7 +207,6 @@ export default function HealthClock() {
       const workSeconds = convertToSeconds(settings.workDuration, settings.workUnit)
       setTimeLeft(workSeconds)
       setTimerState("working")
-      setShowSettings(false)
     }
     setIsRunning(true)
   }
@@ -400,23 +399,46 @@ export default function HealthClock() {
     return ((totalTime - timeLeft) / totalTime) * 100
   }
 
+  function handleWorkUnitChange(newUnit: TimeUnit) {
+    if (settings.workUnit === newUnit) return
+    // 先将当前duration转为秒，再转为新单位
+    const seconds = convertToSeconds(settings.workDuration, settings.workUnit)
+    let newDuration = 0
+    switch (newUnit) {
+      case "hours":
+        newDuration = Math.max(1, Math.round(seconds / 3600))
+        break
+      case "minutes":
+        newDuration = Math.max(1, Math.round(seconds / 60))
+        break
+      case "seconds":
+        newDuration = Math.max(1, seconds)
+        break
+    }
+    setSettings(prev => ({ ...prev, workDuration: newDuration, workUnit: newUnit }))
+    // 如果正在工作，timeLeft也要同步
+    if (timerState === "working") {
+      setTimeLeft(convertToSeconds(newDuration, newUnit))
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
-      <div className="max-w-md mx-auto space-y-6">
+    <div className="min-h-screen h-screen flex flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50 overflow-hidden">
+      <div className="flex-1 flex flex-col max-w-md md:max-w-lg lg:max-w-xl w-full mx-auto">
         {/* 标题 */}
-        <div className="text-center py-6">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <div className="text-center py-2 flex-shrink-0">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             健康时钟
           </h1>
-          <p className="text-gray-600 mt-2">工作与休息的完美平衡</p>
+          <p className="text-gray-600 text-xs md:text-sm lg:text-base mt-1">工作与休息的完美平衡</p>
         </div>
 
         {/* 计时器显示 */}
-        <Card className="backdrop-blur-lg bg-white/80 border-0 shadow-xl rounded-3xl overflow-hidden">
-          <CardContent className="p-8">
-            <div className="text-center space-y-6">
+        <Card className="flex flex-col justify-center items-center backdrop-blur-lg bg-white/80 border-0 shadow-xl rounded-3xl overflow-hidden my-2">
+          <CardContent className="p-4 md:p-8 w-full flex flex-col items-center justify-center">
+            <div className="text-center space-y-3 md:space-y-6 w-full">
               {/* 圆形进度条 */}
-              <div className="relative w-48 h-48 mx-auto">
+              <div className="relative w-36 h-36 md:w-48 md:h-48 lg:w-56 lg:h-56 mx-auto">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                   <circle
                     cx="50"
@@ -443,40 +465,40 @@ export default function HealthClock() {
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <div className="text-4xl font-mono font-bold text-gray-800">{formatTime(timeLeft)}</div>
-                  <div className="text-sm text-gray-500 mt-1">
+                  <div className="text-3xl md:text-4xl lg:text-5xl font-mono font-bold text-gray-800">{formatTime(timeLeft)}</div>
+                  <div className="text-xs md:text-sm lg:text-base text-gray-500 mt-1">
                     {timerState === "working" ? "工作中" : timerState === "resting" ? "休息中" : "准备开始"}
                   </div>
                 </div>
               </div>
 
               {/* 控制按钮 */}
-              <div className="flex justify-center space-x-4">
+              <div className="flex justify-center space-x-2 md:space-x-4">
                 {!isRunning ? (
                   <Button
                     onClick={startTimer}
-                    size="lg"
-                    className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-2xl px-8 py-3 shadow-lg"
+                    size="sm"
+                    className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-2xl px-4 py-2 md:px-8 md:py-3 shadow-lg text-base md:text-lg"
                   >
-                    <Play className="w-5 h-5 mr-2" />
+                    <Play className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
                     {timerState === "idle" ? "立即执行" : "继续"}
                   </Button>
                 ) : (
-                  <Button onClick={pauseTimer} size="lg" variant="outline" className="rounded-2xl px-8 py-3 border-2">
-                    <Pause className="w-5 h-5 mr-2" />
+                  <Button onClick={pauseTimer} size="sm" variant="outline" className="rounded-2xl px-4 py-2 md:px-8 md:py-3 border-2 text-base md:text-lg">
+                    <Pause className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
                     暂停
                   </Button>
                 )}
 
-                <Button onClick={resetTimer} size="lg" variant="outline" className="rounded-2xl px-8 py-3 border-2">
-                  <RotateCcw className="w-5 h-5 mr-2" />
+                <Button onClick={resetTimer} size="sm" variant="outline" className="rounded-2xl px-4 py-2 md:px-8 md:py-3 border-2 text-base md:text-lg">
+                  <RotateCcw className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
                   重置
                 </Button>
               </div>
 
               {/* 设置按钮 */}
-              <Button onClick={() => setShowSettings(!showSettings)} variant="ghost" className="rounded-2xl">
-                <Settings className="w-4 h-4 mr-2" />
+              <Button onClick={() => setShowSettings(!showSettings)} variant="ghost" size="sm" className="rounded-2xl text-base md:text-lg">
+                <Settings className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
                 {showSettings ? "隐藏设置" : "显示设置"}
               </Button>
             </div>
@@ -485,30 +507,30 @@ export default function HealthClock() {
 
         {/* 设置面板 */}
         {showSettings && (
-          <Card className="backdrop-blur-lg bg-white/80 border-0 shadow-xl rounded-3xl overflow-hidden">
-            <CardHeader>
-              <CardTitle className="text-center text-xl">时间设置</CardTitle>
-              <p className="text-sm text-gray-500 text-center mt-1">设置将自动保存</p>
+          <Card className="flex-shrink-0 backdrop-blur-lg bg-white/80 border-0 shadow-xl rounded-3xl overflow-hidden my-2">
+            <CardHeader className="py-2">
+              <CardTitle className="text-center text-base md:text-lg lg:text-xl">时间设置</CardTitle>
+              <p className="text-xs md:text-sm lg:text-base text-gray-500 text-center mt-1">设置将自动保存</p>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-3 md:space-y-6 p-4 md:p-6">
               {/* 工作时长 */}
-              <div className="space-y-3">
-                <Label className="text-base font-medium">工作时长</Label>
-                <div className="flex space-x-3">
+              <div className="space-y-1 md:space-y-3">
+                <Label className="text-sm md:text-base font-medium">工作时长</Label>
+                <div className="flex space-x-2 md:space-x-3">
                   <Input
                     type="number"
                     value={settings.workDuration}
                     onChange={(e) =>
                       setSettings((prev) => ({ ...prev, workDuration: Number.parseInt(e.target.value) || 0 }))
                     }
-                    className="rounded-xl"
+                    className="rounded-xl text-sm md:text-base px-2 py-1 md:px-4 md:py-2"
                     min="1"
                   />
                   <Select
                     value={settings.workUnit}
                     onValueChange={(value: TimeUnit) => setSettings((prev) => ({ ...prev, workUnit: value }))}
                   >
-                    <SelectTrigger className="rounded-xl">
+                    <SelectTrigger className="rounded-xl text-sm md:text-base px-2 py-1 md:px-4 md:py-2">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -521,23 +543,23 @@ export default function HealthClock() {
               </div>
 
               {/* 休息时长 */}
-              <div className="space-y-3">
-                <Label className="text-base font-medium">休息时长</Label>
-                <div className="flex space-x-3">
+              <div className="space-y-1 md:space-y-3">
+                <Label className="text-sm md:text-base font-medium">休息时长</Label>
+                <div className="flex space-x-2 md:space-x-3">
                   <Input
                     type="number"
                     value={settings.restDuration}
                     onChange={(e) =>
                       setSettings((prev) => ({ ...prev, restDuration: Number.parseInt(e.target.value) || 0 }))
                     }
-                    className="rounded-xl"
+                    className="rounded-xl text-sm md:text-base px-2 py-1 md:px-4 md:py-2"
                     min="1"
                   />
                   <Select
                     value={settings.restUnit}
                     onValueChange={(value: TimeUnit) => setSettings((prev) => ({ ...prev, restUnit: value }))}
                   >
-                    <SelectTrigger className="rounded-xl">
+                    <SelectTrigger className="rounded-xl text-sm md:text-base px-2 py-1 md:px-4 md:py-2">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -550,9 +572,9 @@ export default function HealthClock() {
               </div>
 
               {/* 不休息重复提醒 */}
-              <div className="space-y-3">
-                <Label className="text-base font-medium">不休息重复提醒次数</Label>
-                <div className="flex items-center space-x-4">
+              <div className="space-y-1 md:space-y-3">
+                <Label className="text-sm md:text-base font-medium">不休息重复提醒次数</Label>
+                <div className="flex items-center space-x-2 md:space-x-3">
                   <Slider
                     value={[settings.workReminders]}
                     onValueChange={(value) => setSettings((prev) => ({ ...prev, workReminders: value[0] }))}
@@ -570,7 +592,7 @@ export default function HealthClock() {
                         workReminders: Math.max(1, Math.min(100, Number.parseInt(e.target.value) || 1)),
                       }))
                     }
-                    className="w-20 rounded-xl"
+                    className="w-14 md:w-20 rounded-xl text-sm md:text-base px-2 py-1 md:px-4 md:py-2"
                     min="1"
                     max="100"
                   />
@@ -578,9 +600,9 @@ export default function HealthClock() {
               </div>
 
               {/* 不工作重复提醒 */}
-              <div className="space-y-3">
-                <Label className="text-base font-medium">不工作重复提醒次数</Label>
-                <div className="flex items-center space-x-4">
+              <div className="space-y-1 md:space-y-3">
+                <Label className="text-sm md:text-base font-medium">不工作重复提醒次数</Label>
+                <div className="flex items-center space-x-2 md:space-x-3">
                   <Slider
                     value={[settings.restReminders]}
                     onValueChange={(value) => setSettings((prev) => ({ ...prev, restReminders: value[0] }))}
@@ -598,7 +620,7 @@ export default function HealthClock() {
                         restReminders: Math.max(1, Math.min(100, Number.parseInt(e.target.value) || 1)),
                       }))
                     }
-                    className="w-20 rounded-xl"
+                    className="w-14 md:w-20 rounded-xl text-sm md:text-base px-2 py-1 md:px-4 md:py-2"
                     min="1"
                     max="100"
                   />
